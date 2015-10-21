@@ -11,8 +11,8 @@ NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz"
 if ! curl -L -o ${OPENSHIFT_NODEJS_DIR}tmp.tgz $NODE_URL; then
     return 1
 fi
-tar -xvzf ${OPENSHIFT_NODEJS_DIR}tmp.tgz --strip-components=1 -c ${OPENSHIFT_NODEKJS_DIR}
-rm ${OPENSHIFT_NODEJS_DIR}temp.tgz
+tar -xvzf ${OPENSHIFT_NODEJS_DIR}tmp.tgz --strip-components=1 -C ${OPENSHIFT_NODEJS_DIR}
+rm ${OPENSHIFT_NODEJS_DIR}tmp.tgz
 echo "Node.js v${VERSION} installed with npm $(npm --version)"
 
 # Update global npm if necessary
