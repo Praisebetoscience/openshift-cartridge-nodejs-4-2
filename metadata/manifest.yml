@@ -7,7 +7,7 @@ Source-Url: https://github.com/Praisebetoscience/openshift-cartridge-nodejs-4-2.
 License: MIT License
 License-Url: https://raw.github.com/joyent/node/v0.6/LICENSE
 Cartridge-Verson: 0.1
-Cartridge-Vender: PraseBeToScience
+Cartridge-Vender: praisebetoscience
 Install-Build-Required: true
 Catagories:
   - service
