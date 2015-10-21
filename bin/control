@@ -1,0 +1,72 @@
+#!/bin/bash
+
+STOPTIMEOUT=10
+FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
+
+function print_missing_package_json_error() {
+    cat <<ERROR
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ERROR: package.json not found.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ERROR
+}
+
+function pre-build() {
+    echo "pre-build"
+}
+
+function post-deploy {
+    echo "post-deploy"
+}
+
+function build() {
+    echo "build"
+}
+
+function start() {
+    echo "start"
+}
+
+function stop() {
+    echo "stop"
+}
+
+function restart() {
+    stop
+    start
+}
+
+function status() {
+    echo "status"
+}
+
+function tidy() {
+    echo "tidy"
+}
+
+
+#
+# main():
+#
+
+# Ensure arguments
+if ! [ $# -eq 1]; then
+    echo "Usage: $0 [start|restart|graceful|graceful-stop|stop|status]"
+    exit 1
+fi
+
+# Sorce Utility Functions
+source $OPENSHIFT_CARTDRIDGE_SDK_BASH
+
+# Handle commands.
+case ${1} in
+    start)              start               ;;
+    restart|graceful)   restart             ;;
+    graceful-stop|stop) stop                ;;
+    status)             status              ;;
+    build)              build               ;;
+    pre-build)          pre-build           ;;
+    post-deploy)        post-deploy         ;;
+    tidy)               tidy                ;;
+    *)                  exit 0
+esac

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+local VERSION=4.2.1
+
+#URL from to download nodejs from node.org
+local NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz
+
+#Install node.js
+if ! curl -L -o ${OPENSHIFT_NODEJS_DIR}tmp.tgz $NODE_URL; then
+    return 1
+fi
+tar -xvzf ${OPENSHIFT_NODEJS_DIR}tmp.tgz --strip-components=1 -c ${OPENSHIFT_NODEKJS_DIR}
+rm ${OPENSHIFT_NODEJS_DIR}temp.tgz
+echo "Node.js v${VERSION} installed with npm $(npm --version)"
+
+# Update global npm if necessary
+if [ $(npm view npm version) != $(npm --version) ]; then
+    npm i -g npm
+fi
+
+# Install gulp globally
+if ! [ -f ${OPENSHIFT_NODEJS_DIR}bin/gulp ]; then
+    npm i -g gulp
+fi
+
+
+# npm keeps per-user config in ~/.npmrc and cache in ~/.npm/  and
+# node-gyp (add-on build tool) uses ~/.node-gyp
+# Create files/directories, change ownership and SELinux file security context.
+touch "$OPENSHIFT_HOMEDIR"/.npmrc
+mkdir "$OPENSHIFT_HOMEDIR"/.npm
+mkdir "$OPENSHIFT_HOMEDIR"/.node-gyp
+chown $OPENSHIFT_APP_UUID.$OPENSHIFT_APP_UUID -R "$OPENSHIFT_HOMEDIR"/.npm "$OPENSHIFT_HOMEDIR"/.npmrc  \
+                            "$OPENSHIFT_HOMEDIR"/.node-gyp
+npm config set tmp $OPENSHIFT_TMP_DIR

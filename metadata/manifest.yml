@@ -81,13 +81,10 @@ Subscribes:
     Type: "NET_TCP:db:postgres"
     Required: false
   set-nosql-db-connection-info:
-    Type: "ENV:NET_TCP:nosql:connection-info"
+    Type: "ENV:NET_TCP:nosqldb:connection-info"
     Required: false
   set-redis-connection-info:
     Type: "ENV:NET_TCP:redis:connection-info"
-    Required: false
-  set-mongo-connection-info:
-    Type: "ENV:NET_TCP:mongo:connection-info"
     Required: false
 Group-Overrides:
   - components:
@@ -104,4 +101,4 @@ Endpoints:
         Options:        { websocket: true }
       - Frontend:       "/health"
         Backend:        ""
-        Options:        {health: true }
+        Options:        { health: true }
