@@ -9,7 +9,7 @@ License-Url: https://raw.github.com/joyent/node/v0.6/LICENSE
 Cartridge-Verson: 0.1
 Cartridge-Vendor: pbts
 Install-Build-Required: true
-Catagories:
+Categories:
   - service
   - javascript
   - nodejs
