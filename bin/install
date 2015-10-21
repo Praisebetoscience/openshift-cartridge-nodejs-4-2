@@ -2,10 +2,10 @@
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
-local VERSION=4.2.1
+VERSION=4.2.1
 
 #URL from to download nodejs from node.org
-local NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz
+NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz
 
 #Install node.js
 if ! curl -L -o ${OPENSHIFT_NODEJS_DIR}tmp.tgz $NODE_URL; then
