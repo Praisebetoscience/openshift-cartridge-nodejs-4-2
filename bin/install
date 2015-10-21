@@ -5,7 +5,7 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 VERSION=4.2.1
 
 #URL from to download nodejs from node.org
-NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz
+NODE_URL="https://nodejs.org/dist/v${VERSION}/node-v${VERSION}-linux-x64.tar.gz"
 
 #Install node.js
 if ! curl -L -o ${OPENSHIFT_NODEJS_DIR}tmp.tgz $NODE_URL; then
@@ -32,6 +32,5 @@ fi
 touch "$OPENSHIFT_HOMEDIR"/.npmrc
 mkdir "$OPENSHIFT_HOMEDIR"/.npm
 mkdir "$OPENSHIFT_HOMEDIR"/.node-gyp
-chown $OPENSHIFT_APP_UUID.$OPENSHIFT_APP_UUID -R "$OPENSHIFT_HOMEDIR"/.npm "$OPENSHIFT_HOMEDIR"/.npmrc  \
-                            "$OPENSHIFT_HOMEDIR"/.node-gyp
+chown $OPENSHIFT_APP_UUID.$OPENSHIFT_APP_UUID -R "$OPENSHIFT_HOMEDIR"/.npm "$OPENSHIFT_HOMEDIR"/.npmrc "$OPENSHIFT_HOMEDIR"/.node-gyp
 npm config set tmp $OPENSHIFT_TMP_DIR
