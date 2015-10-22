@@ -96,6 +96,10 @@ function start() {
 	pushd "$OPENSHIFT_REPO_DIR" > /dev/null
 	echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' ..." >> $logf
 
+	# Gulp applications require a home and temp environment varibles to be set to someplace with permissions
+	export HOME=${OPENSHIFT_DATA_DIR}
+    export TEMP=${OPENSHIFT_TMP_DIR}
+
 	nohup $executor_commandline >> $logf 2>&1 &
 	
 	ret=$?
