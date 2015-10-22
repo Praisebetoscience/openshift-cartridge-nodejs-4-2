@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for file in ${OPENSHIFT_NODEJS_DIR}env/*.erb; do
+    erb $file > ${file:0:${#file}-4}
+    rm $file
+done
