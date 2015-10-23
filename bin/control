@@ -66,7 +66,7 @@ function build() {
 	if [ -f "${OPENSHIFT_REPO_DIR}"/package.json ]; then
 		export HOME=${OPENSHIFT_DATA_DIR}
     	export TEMP=${OPENSHIFT_TMP_DIR}
-		(cd "${OPENSHIFT_REPO_DIR}"; npm install -ddd --production --no-color --no-spin)
+		(cd "${OPENSHIFT_REPO_DIR}"; npm install --production --no-color --no-spin)
 	else
 		print_missing_package_json_error
 		exit 1
