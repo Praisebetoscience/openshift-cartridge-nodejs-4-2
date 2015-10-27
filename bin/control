@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash 
 
 # Sorce Utility Functions
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
