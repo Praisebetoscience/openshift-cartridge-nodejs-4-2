@@ -1,38 +1,38 @@
-#!/bin/bash
+#!/bin/bash -eu
+
+# Sorce Utility Functions
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 STOPTIMEOUT=10
 FMT="%a %b %d %Y %H:%M:%S GMT%z (%Z)"
 
+ndir=${OPENSHIFT_NODEJS_DIR%/}
+repo=${OPENSHIFT_REPO_DIR%/} 
+tmp=${OPENSHIFT_TMP_DIR%/}
+home=${OPENSHIFT_HOMEDIR%/} 
+data=${OPENSHIFT_DATA_DIR%/}
+pdir=${OPENSHIFT_NODEJS_PID_DIR%/} 
+aname=$OPENSHIFT_APP_NAME
+
 function print_missing_package_json_error() {
-    cat <<ERROR
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ERROR: package.json not found.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ERROR
+	client_error "package.json not found."
 }
 
 function print_missing_entry_error() {
-	cat <<ERROR
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-NO ENTRY FOUND.  Please make sure one of the following is
-set:
-
-1) "scripts": "start" in package.json
-2) "main" in package.json
-3) main file named server.js
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ERROR
+	client_error "NO ENTRY FOUND.  Please make sure one of the following is set:"
+	client_error "	1) \"scripts\": \"start\" in package.json"
+	client_error "	2) "main" in package.json"
 }
 
 function pre-build() {
-	rm -rf ${OPENSHIFT_NODEJS_DIR}tmp/{node_modules,saved.node_modules}
+	rm -rf $tmp/{node_modules,saved.node_modules}
 
 	# If the node_modules/ directory exists, then "stash" it away for redeploy.
-	node_modules_dir="${OPENSHIFT_REPO_DIR}node_modules"
-	if [ -d "$node_modules_dir" ]; then
-	    echo 'Saving away previously installed Node modules'
-	    mv "$node_modules_dir" "${OPENSHIFT_NODEJS_DIR}tmp/saved.node_modules"
-	    mkdir -p "$node_modules_dir"
+	nmdir=$repo/node_modules
+	if [ -d $nmdir ]; then
+	    echo "Saving away previously installed Node modules"
+	    mv $nmdir $tmp/saved.node_modules
+	    mkdir -p $nmdir
 	fi
 }
 
@@ -42,31 +42,30 @@ function post-deploy() {
 
 function build() {
 	# If old modules exist, restore them to save time building
-	if [ -d "${OPENSHIFT_NODEJS_DIR}tmp/saved.node_modules" ]; then
-	    node_modules_dir="${OPENSHIFT_REPO_DIR}node_modules/"
-	    for d in `ls -a ${OPENSHIFT_NODEJS_DIR}tmp/saved.node_modules`; do
-	        [ -e "${node_modules_dir}$d" ] || mv "${OPENSHIFT_NODEJS_DIR}tmp/saved.node_modules/$d" "${node_modules_dir}"
+	if [ -d $tmp/saved.node_modules ]; then
+	    nmdir=$repo/node_modules/
+	    for d in $( ls -a $tmp/saved.node_modules ); do
+	        [ -e $nmdir/$d ] || mv $tmp/saved.node_modules/$d $nmdir
 	    done
-	    rm -rf "${OPENSHIFT_NODEJS_DIR}tmp/saved.node_modules"
+	    rm -rf $tmp/saved.node_modules
 	fi
 	
 	# If force rebuild marker found, wipe everything and rebuild from scratch
-	if [ -f "${OPENSHIFT_REPO_DIR}.openshift/markers/force_clean_build" ]; then
+	if [ -f $repo/.openshift/markers/force_clean_build ]; then
 	    echo ".openshift/markers/force_clean_build found!  Recreating npm modules" 1>&2
-	    rm -rf "${OPENSHIFT_NODEJS_DIR}"node_modules/*
-	    rm -rf "${OPENSHIFT_HOMEDIR}".npm/*
-	    rm -rf "${OPENSHIFT_REPO_DIR}"node_modules/*
+	    rm -rf $ndir/node_modules/*
+	    rm -rf $home/.npm/*
+	    rm -rf $repo/node_modules/*
 	fi
 	
 	# newer versions of Node set tmp to $HOME/tmp, which is not available.	
-	npm config set tmp $OPENSHIFT_TMP_DIR
+	npm config set tmp $tmp
 	unset GIT_DIR
 	unset GIT_WORK_TREE
 
-	if [ -f "${OPENSHIFT_REPO_DIR}"/package.json ]; then
-		export HOME=${OPENSHIFT_DATA_DIR}
-    	export TEMP=${OPENSHIFT_TMP_DIR}
-		(cd "${OPENSHIFT_REPO_DIR}"; npm install --production --no-color --no-spin)
+	if [ -f $repo/package.json ]; then
+		export HOME=$data
+		(cd $repo; npm install --production --no-color --no-spin)
 	else
 		print_missing_package_json_error
 		exit 1
@@ -75,9 +74,8 @@ function build() {
 
 
 function start() {
-	logf="${OPENSHIFT_NODEJS_LOG_DIR}node.log"
 	
-	if ! [ -f ${OPENSHIFT_REPO_DIR}package.json ]; then
+	if ! [ -f $repo/package.json ]; then
 		print_missing_package_json_error
 		exit 1;
 	fi
@@ -85,51 +83,46 @@ function start() {
 	start_script="$( get_start_script_from_package_json )"
 	
 	if [ "$start_script" != "False" ]; then
-		executor_commandline="npm start -d"
-	elif [ "$main_js" != "server.js" ] && ! [ -f "${OPENSHIFT_REPO_DIR}server.js" ]; then
-		print_missin_package_info_error
+		start_cmd="npm start -d"
+	elif ! [ -f $repo/$main_js ]; then
+		print_missing_entry_error
 		exit 1
 	else
-		executor_commandline="node $main_js"
+		start_cmd="node $main_js"
 	fi
 
-	pushd "$OPENSHIFT_REPO_DIR" > /dev/null
-	echo "`date +"$FMT"`: Starting application '$OPENSHIFT_APP_NAME' ..." >> $logf
+	pushd $repo > /dev/null
+	echo "`date +"$FMT"`: Starting application '$aname' ..." |& /usr/bin/logshifter -tag nodejs 
 
 	# Gulp applications require a home and temp environment varibles to be set to someplace with permissions
-	export HOME=${OPENSHIFT_DATA_DIR}
-    export TEMP=${OPENSHIFT_TMP_DIR}
+	export HOME=$data
 
-	nohup $executor_commandline >> $logf 2>&1 &
+	nohup $start_cmd |& /usr/bin/logshifter -tag nodejs &
 	
 	ret=$?
 	npid=$!
 	popd > /dev/null
 	if [ $ret -eq 0 ]; then
-		echo "$npid" > "${OPENSHIFT_NODEJS_PID_DIR}node.pid"
+		echo $npid > $pdir/node.pid
 	else
-		echo "Application '$OPENSHIFT_APP_NAME' failed to start - $ret" 1>&2
+		echo "Application '$aname' failed to start - $ret" 1>&2
 		exit $ret
 	fi
 }
 
 function stop() {
-	if [ -f ${OPENSHIFT_NODEJS_PID_DIR}node.pid ]; then
-		pid=$( cat ${OPENSHIFT_NODEJS_PID_DIR}node.pid 2> /dev/null )
-	fi
-
+	pid=$( cat $pdir/node.pid 2> /dev/null )
 	if [ -n "$pid" ]; then
-		logf="${OPENSHIFT_NODEJS_LOG_DIR}/node.log"
-		echo "`date +"$FMT"`: Stopping application '$OPENSHIFT_APP_NAME' ..." >> $logf
-		pgid=$( ps -o pgid --no-headers "$pid" | tr -d ' ')
-		/bin/kill -TERM -"$pgid"
+		echo "`date +"$FMT"`: Stopping application '$aname' ..." |& /usr/bin/logshifter -tag nodejs 
+		pgid=$( ps -o pgid --no-headers $pid | tr -d ' ')
+		/bin/kill -TERM -$pgid
 		ret=$?
 		if [ $ret -eq 0 ]; then
-			TIMEOUT="$STOPTIMEOUT"
+			TIMEOUT=$STOPTIMEOUT
 			while [ $TIMEOUT -gt 0 ] && is_node_service_running ; do
-				/bin/kill -0 -"$pgid" > /dev/null 2>&1 || break
+				/bin/kill -0 -$pgid > /dev/null 2>&1 || break
 				sleep 1
-				let TIMEOUT=${TIMEOUT}-1
+				let TIMEOUT-=1
 			done
 		fi
 
@@ -137,11 +130,11 @@ function stop() {
 			killall -9 node > /dev/null 2>&1 || :
 		fi
 	
-		echo "`date +"$FMT"`: Stopped Node application '$OPENSHIFT_APP_NAME'" >> $logf
-		rm -f ${OPENSHIFT_NODEJS_PID_DIR}node.pid
+		echo "`date +"$FMT"`: Stopped Node application '$aname'" |& /usr/bin/logshifter -tag nodejs
+		rm -f $pdir/node.pid
 	else
 		if `pgrep -x node -u $(id -u)  > /dev/null 2>&1`; then
-			echo "Warning: Application '$OPENSHIFT_APP_NAME' Node server exists without a pid file.  Use force-stop to kill." 1>&2
+			echo "Warning: Application '$aname' Node server exists without a pid file.  Use force-stop to kill." 1>&2
 		fi
 	fi
 }
@@ -152,8 +145,8 @@ function restart() {
 }
 
 function is_node_service_running() {
-	if [ -f ${OPENSHIFT_NODEJS_PID_DIR}node.pid ]; then
-		node_pid=$( cat ${OPENSHIFT_NODEJS_PID_DIR}node.pid 2> /dev/null )
+	if [ -f $pdir/node.pid ]; then
+		node_pid=$( cat $pdir/node.pid 2> /dev/null )
 		myid=$( id -u )
 		if `ps --pid $node_pid 2>&1 | grep node > /dev/null 2>&1` || `pgrep -x node -u $myid > /dev/null 2>&1`; then
 			return 0
@@ -172,17 +165,16 @@ function status() {
 }
 
 function tidy() {
-	client_message "Emptying log dir: $OPENSHIFT_NODEJS_LOG_DIR"
 	shopt -s dotglob
-	rm -rf ${OPENSHIFT_NODEJS_LOG_DIR}*
-	rm -rf ${OPENSHIFT_NODEJS_DIR}tmp/*
+	rm -rf $OPENSHIFT_LOG_DIR/nodejs.log*
+	rm -rf $tmp/*
 }
 
 function get_main_script_from_package_json() {
 	python <<PYTHON
 import json
 try:
-	with open('${OPENSHIFT_REPO_DIR}package.json', 'r') as f:
+	with open('$repo/package.json', 'r') as f:
 		pj = json.loads(f.read())
 		m = pj['main'] if pj['main'] else 'server.js'
 		print(m)
@@ -195,7 +187,7 @@ function get_start_script_from_package_json() {
 	python <<PYTHON
 import json
 try:
-	with open('${OPENSHIFT_REPO_DIR}package.json', 'r') as f:
+	with open('$repo/package.json', 'r') as f:
 		pj = json.loads(f.read())
 		if 'scripts' in pj:
 			if 'start' in pj['scripts']:
@@ -216,9 +208,6 @@ if ! [ $# -eq 1 ]; then
     echo "Usage: $0 [start|restart|stop|status]"
     exit 1
 fi
-
-# Sorce Utility Functions
-source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 # Handle commands.
 case ${1} in

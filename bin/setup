@@ -1,1 +1,23 @@
-#!/bin/bash
+#!/bin/bash -eu
+
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+case $1 in
+	-v|--version)	ver=$2	;;
+esac
+
+ndir=$OPENSHIFT_NODEJS_DIR
+tmp=$OPENSHIFT_TMP_DIR
+nurl="https://nodejs.org/dist/v${ver}/node-v${ver}-linux-x64.tar.gz"
+
+mkdir -p $ndir/{usr,run}
+
+#Install node.js
+if ! curl -L -o $tmp/tmp.tgz $nurl; then
+    return 1
+fi
+tar -xvzf $tmp/tmp.tgz --strip-components=1 -C $ndir/usr/
+rm $tmp/tmp.tgz
+find $ndir/usr -maxdepth 1 -type f -delete
+echo "Node.js v${ver} installed with npm $(npm --version)"
+
