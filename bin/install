@@ -22,7 +22,7 @@ fi
 # node-gyp (add-on build tool) uses ~/.node-gyp
 # Create files/directories, change ownership and SELinux file security context.
 touch $home/.npmrc
-mkdir $home/.npm
-mkdir $home/.node-gyp
+mkdir -p $home/.npm
+mkdir -p $home/.node-gyp
 chown $uuid.$uuid -R $home/.npm $home/.npmrc $home/.node-gyp
 npm config set tmp $tmp
