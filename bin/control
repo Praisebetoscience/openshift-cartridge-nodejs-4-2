@@ -97,7 +97,7 @@ function start() {
 	# Gulp applications require a home and temp environment varibles to be set to someplace with permissions
 	export HOME=$data
 
-	nohup $start_cmd |& /usr/bin/logshifter -tag nodejs &
+	nohup $start_cmd < /dev/null |& /usr/bin/logshifter -tag nodejs &
 	
 	ret=$?
 	npid=$!
