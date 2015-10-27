@@ -1,6 +1,6 @@
 Name: nodejs
 Cartridge-Short-Name: NODEJS
-Display-Name: Node.js 4.2.1
+Display-Name: Node.js 4.2
 Description: "Node.js is a JavaScript runtime built on Chrome's V8 JavaScript engine which uses an event-driven, non-blocking I/O model that makes it lightweight and efficient."
 Version: "4.2.1"
 Source-Url: https://github.com/Praisebetoscience/openshift-cartridge-nodejs-4-2.git
