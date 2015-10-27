@@ -82,8 +82,8 @@ function start() {
 	main_js="$( get_main_script_from_package_json )"
 	start_script="$( get_start_script_from_package_json )"
 	
-	if [ "$start_script" != "False" ]; then
-		start_cmd="npm start -d"
+	if [ -n "$start_script" ]; then
+		start_cmd="npm -d start"
 	elif ! [ -f $repo/$main_js ]; then
 		print_missing_entry_error
 		exit 1
@@ -193,9 +193,9 @@ try:
 			if 'start' in pj['scripts']:
 				print(pj['scripts']['start'])
 		else:
-			print(False)
+			print('')
 except:
-	print(False)
+	print('')
 PYTHON
 }
 
