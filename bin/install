@@ -5,7 +5,7 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 ndir=$OPENSHIFT_NODEJS_DIR
 home=$OPENSHIFT_HOMEDIR
 tmp=$OPENSHIFT_TMP_DIR
-uuid=$OPENSHIFT_GEAR_UUID_
+uuid=$OPENSHIFT_GEAR_UUID
 
 # Update global npm if necessary
 if [ $(npm view npm version) != $(npm --version) ]; then
